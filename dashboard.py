@@ -4,15 +4,17 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import datetime
-import plotly.express as px
 import dateutil.relativedelta
 import io
-import plotly.io as pio
 import yfinance as yf
 from dtaidistance import dtw
 from dtaidistance import dtw_visualisation as dtwvis
 from scipy.stats import zscore
 import functions as f
+import plotly.graph_objects as go
+import plotly.io as pio
+pio.renderers.default='browser'
+from plotly.subplots import make_subplots
 #%%
 
 #########
@@ -44,44 +46,40 @@ with st.sidebar:
 #############
 # Query data
 #############
-@st.cache(show_spinner=False)
+# @st.cache(show_spinner=False)
 def load_from_dwh(input_ticker):
     df = yf.Ticker(input_ticker).history(period="max")
     return df
 #%%
 
 df = load_from_dwh(input_ticker)
-
 dfs = f.split(df.iloc[:-lookback,:], len_chunk=lookback, step=2)
-
 dists = []
-
 seq1 = zscore(df.tail(lookback)['Close'].values)
 
 for x in range(len(dfs)):
-    
     seq2 = zscore(dfs[x]['Close'].values)
     distance = dtw.distance(seq1,seq2)
     dists.append(distance)
 
 np.argmin(dists)
 #%%
-import plotly.graph_objects as go
-import plotly.io as pio
-pio.renderers.default='browser'
-fig = go.Figure()
 
+fig = make_subplots(rows=2)
 
 seq2 = zscore(dfs[np.argmin(dists)]['Close'].values)
-
+current = dfs[np.argmin(dists)]
+go.Ohlc(x=df['Date'],
+                open=df['AAPL.Open'],
+                high=df['AAPL.High'],
+                low=df['AAPL.Low'],
+                close=df['AAPL.Close'])
 fig.add_trace(go.Scatter(x=dfs[np.argmin(dists)].index, y=seq1))
 fig.add_trace(go.Scatter(x=dfs[np.argmin(dists)].index, y=seq2))
 
 fig.show()
 #%%
-from dtaidistance import dtw
-from dtaidistance import dtw_visualisation as dtwvis
-import numpy as np
+
 
 path = dtw.warping_path(seq1, seq2)
 dtwvis.plot_warping(seq1, seq2, path, filename="warp.png")
@@ -111,3 +109,10 @@ else:
     # Result set is empty
     st.warning('No data for selected filters.')
 
+fig = go.Figure(data=go.Ohlc(x=df['Date'],
+                open=df['AAPL.Open'],
+                high=df['AAPL.High'],
+                low=df['AAPL.Low'],
+                close=df['AAPL.Close']))
+fig.update(layout_xaxis_rangeslider_visible=False)
+fig.show()
