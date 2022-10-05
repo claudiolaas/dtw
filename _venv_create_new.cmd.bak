@@ -1,0 +1,17 @@
+@echo off
+cls
+python -m venv venv
+CALL "%CD%\venv\Scripts\activate.bat"
+pip config set global.trusted-host "pypi.org files.pythonhosted.org pypi.python.org" --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org
+pip install --upgrade pip
+pip install pandas
+pip install numpy
+pip install streamlit
+pip install pyodbc
+pip install plotly
+pip install ipykernel
+pip install jupyter
+python -m ipykernel install --user --name=venv
+code .
+echo All done. Restart vscode!
+pause
